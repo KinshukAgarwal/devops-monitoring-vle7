@@ -8,7 +8,7 @@ docker build -t jenkins-k8s-lab .
 docker rm -f jenkins 2>/dev/null || true
 docker run -d --name jenkins --restart unless-stopped --network host \
   -e JENKINS_OPTS="--httpListenAddress=127.0.0.1" \
-  -e KUBECONFIG=/etc/k3s.yaml -e JENKINS_SLAVE_AGENT_PORT=-1 \
+  -e KUBECONFIG=/etc/k3s.yaml \
   --group-add "$(stat -c %g /var/run/docker.sock)" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /etc/rancher/k3s/k3s.yaml:/etc/k3s.yaml:ro \

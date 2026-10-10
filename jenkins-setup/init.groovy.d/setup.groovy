@@ -14,6 +14,7 @@ def auth = new FullControlOnceLoggedInAuthorizationStrategy()
 auth.setAllowAnonymousRead(false)
 j.setAuthorizationStrategy(auth)
 j.setNumExecutors(1)
+j.setSlaveAgentPort(-1)   // no inbound agents: builds run on the controller
 j.save()
 
 if (j.getItem('myapp-pipeline') == null) {
