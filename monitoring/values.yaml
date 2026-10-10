@@ -76,7 +76,16 @@ grafana:
   sidecar:
     resources: {requests: {cpu: 10m, memory: 48Mi}, limits: {memory: 128Mi}}
     datasources:
-      initDatasources: true   # run the datasource loader once as an init container, not a 2nd resident sidecar
+      enabled: false          # static datasource below instead of a 2nd resident python sidecar (~80 MB)
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - {name: Prometheus, type: prometheus, uid: prometheus, isDefault: true,
+           url: "http://monitoring-kube-prometheus-prometheus.monitoring:9090/"}
+        - {name: Alertmanager, type: alertmanager, uid: alertmanager,
+           url: "http://monitoring-kube-prometheus-alertmanager.monitoring:9093/",
+           jsonData: {implementation: prometheus}}
   env:
     GOMEMLIMIT: 150MiB
 
