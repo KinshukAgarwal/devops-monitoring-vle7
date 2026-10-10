@@ -1,0 +1,5 @@
+# /etc/rancher/k3s/config.yaml used on the t3.small (k3s instead of minikube: 2 GB RAM)
+write-kubeconfig-mode: "0644"
+disable: [traefik, servicelb, metrics-server]
+disable-helm-controller: true
+disable-network-policy: true
