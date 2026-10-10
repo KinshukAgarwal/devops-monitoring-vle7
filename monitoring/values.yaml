@@ -8,10 +8,18 @@ defaultRules:
     kubeSchedulerRecording: false
     kubeProxy: false
     windows: false
+    kubeApiserverAvailability: false   # heavy SLO recording rules
+    kubeApiserverBurnrate: false
+    kubeApiserverHistogram: false
+    kubeApiserverSlos: false
 kubeControllerManager: {enabled: false}
 kubeScheduler: {enabled: false}
 kubeProxy: {enabled: false}
 kubeEtcd: {enabled: false}
+# API-server metrics are ~half of all series on a small cluster; dropped to fit in 2 GB
+kubeApiServer: {enabled: false}
+kubelet:
+  serviceMonitor: {probes: false, resource: false}
 
 prometheusOperator:
   admissionWebhooks: {enabled: false}
@@ -26,7 +34,7 @@ prometheus:
     ruleSelectorNilUsesHelmValues: false          # pick up our own PrometheusRule objects
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
-    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {memory: 640Mi}}
+    resources: {requests: {cpu: 100m, memory: 200Mi}, limits: {memory: 512Mi}}
 
 alertmanager:
   alertmanagerSpec:
@@ -67,6 +75,10 @@ grafana:
   resources: {requests: {cpu: 50m, memory: 96Mi}, limits: {memory: 256Mi}}
   sidecar:
     resources: {requests: {cpu: 10m, memory: 48Mi}, limits: {memory: 128Mi}}
+    datasources:
+      initDatasources: true   # run the datasource loader once as an init container, not a 2nd resident sidecar
+  env:
+    GOMEMLIMIT: 150MiB
 
 kube-state-metrics:
   resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 96Mi}}
