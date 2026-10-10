@@ -1,0 +1,74 @@
+# kube-prometheus-stack trimmed for a 2 GB t3.small running k3s.
+# k3s runs scheduler/controller-manager/proxy/etcd inside one process, so those scrape jobs and rules are off.
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
+    windows: false
+kubeControllerManager: {enabled: false}
+kubeScheduler: {enabled: false}
+kubeProxy: {enabled: false}
+kubeEtcd: {enabled: false}
+
+prometheusOperator:
+  admissionWebhooks: {enabled: false}
+  tls: {enabled: false}
+  resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {memory: 128Mi}}
+
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    ruleSelectorNilUsesHelmValues: false          # pick up our own PrometheusRule objects
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {memory: 640Mi}}
+
+alertmanager:
+  alertmanagerSpec:
+    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 96Mi}}
+  config:
+    global: {resolve_timeout: 5m}
+    route:
+      receiver: webhook-logger
+      group_by: [alertname, namespace]
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 1h
+      routes:
+        - receiver: "null"
+          matchers: ['alertname =~ "Watchdog|InfoInhibitor"']
+    receivers:
+      - name: "null"
+      - name: webhook-logger
+        webhook_configs:
+          - url: http://alert-webhook.monitoring.svc:8080/alert
+            send_resolved: true
+      # Email / Slack would be added the same way, e.g.
+      # - name: team-email
+      #   email_configs: [{to: oncall@example.com, from: alertmanager@example.com, smarthost: smtp.example.com:587, auth_username: ..., auth_password: ...}]
+      # - name: team-slack
+      #   slack_configs: [{api_url: https://hooks.slack.com/services/..., channel: '#alerts'}]
+    inhibit_rules:
+      - source_matchers: ['severity = critical']
+        target_matchers: ['severity = warning']
+        equal: [alertname, namespace]
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  defaultDashboardsTimezone: browser
+  resources: {requests: {cpu: 50m, memory: 96Mi}, limits: {memory: 256Mi}}
+  sidecar:
+    resources: {requests: {cpu: 10m, memory: 48Mi}, limits: {memory: 128Mi}}
+
+kube-state-metrics:
+  resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 96Mi}}
+prometheus-node-exporter:
+  resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
